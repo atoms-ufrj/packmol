@@ -130,7 +130,7 @@ subroutine output(n,x,stat)
                           coor(idatom,1),coor(idatom,2),&
                           coor(idatom,3),&
                           v1,v2,v3) 
-            write(30,"( tr2,a3,tr2,3(tr2,f14.6) )") ele(idatom), (xcart(icart, k), k = 1, 3)
+            write(30,"( tr2,a,tr2,3(tr2,f14.6) )") trim(ele(idatom)), (xcart(icart, k), k = 1, 3)
           end do 
           ilugan = ilugan + 3 
           ilubar = ilubar + 3 
@@ -140,7 +140,7 @@ subroutine output(n,x,stat)
         idatom = idfirst(i_fixed) - 1
         do iatom = 1, natoms(i_fixed)
           idatom = idatom + 1
-          write(30,"( tr2,a3,tr2,3(tr2,f14.6) )") ele(idatom), (coor(idatom,k),k=1,3)
+          write(30,"( tr2,a,tr2,3(tr2,f14.6) )") trim(ele(idatom)), (coor(idatom,k),k=1,3)
         end do
       end if
     end do
@@ -637,7 +637,7 @@ subroutine output(n,x,stat)
 
   if(tinker) then
 
-    tinker_atom_line = "( i7,tr2,a3,3(tr2,f10.6),9(tr2,i7) )"
+    tinker_atom_line = "( i7,tr2,a,3(tr2,f10.6),9(tr2,i7) )"
 
     open(30, file = xyzout,status='unknown') 
  
@@ -680,7 +680,7 @@ subroutine output(n,x,stat)
               ntcon(k) = nconnect(idatom,k) + i_ref_atom
             end do
             write(30,tinker_atom_line) i_ref_atom+iatom,&
-                                       ele(idatom), (xcart(icart, k), k = 1, 3),&
+                                       trim(ele(idatom)), (xcart(icart, k), k = 1, 3),&
                                        (ntcon(k), k = 1, maxcon(idatom))
           end do 
           i_ref_atom = i_ref_atom + natoms(i_not_fixed)
@@ -700,7 +700,7 @@ subroutine output(n,x,stat)
           do k = 2, maxcon(idatom)
             ntcon(k) = nconnect(idatom,k) + i_ref_atom
           end do
-          write(30,tinker_atom_line) i_ref_atom+iatom, ele(idatom),&
+          write(30,tinker_atom_line) i_ref_atom+iatom, trim(ele(idatom)),&
                                      (coor(idatom,k), k = 1, 3),&
                                      (ntcon(k), k = 1, maxcon(idatom))
         end do
