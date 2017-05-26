@@ -87,6 +87,8 @@ subroutine setsizes( unit, stat )
   end do
   rewind(unit)
 
+  if (allocated(inputfile)) deallocate( inputfile )
+  if (allocated(keyword)) deallocate( keyword )
   allocate(inputfile(nlines),keyword(nlines,maxkeywords))
 
   ! Read input to inputfile array
@@ -164,6 +166,10 @@ subroutine setsizes( unit, stat )
     end if
   end do
 
+  if (allocated(nmols)) deallocate(nmols,natoms,idfirst,constrain_rot,&
+                                   rot_bound,dmax,cmxmin,cmymin,cmzmin,&
+                                   cmxmax,cmymax,cmzmax,comptype,compsafe,&
+                                   restart_from,restart_to)
   allocate(nmols(ntype),natoms(ntype),idfirst(ntype),constrain_rot(ntype,3),&
            rot_bound(ntype,3,2),dmax(ntype),&
            cmxmin(ntype),cmymin(ntype),cmzmin(ntype),&
@@ -256,7 +262,7 @@ subroutine setsizes( unit, stat )
   nbp = int((fbins*dble(ntotat))**(1.d0/3.d0)) + 1
 
   ! Allocate arrays depending on nbp parameter
-
+  if (allocated(latomfirst)) deallocate(latomfirst,latomfix,hasfree,lboxnext)
   allocate(latomfirst(0:nbp+1,0:nbp+1,0:nbp+1),&
            latomfix(0:nbp+1,0:nbp+1,0:nbp+1),&
            hasfree(0:nbp+1,0:nbp+1,0:nbp+1),&
@@ -279,6 +285,10 @@ subroutine setsizes( unit, stat )
   mrperatom = i
 
   ! Allocate arrays depending on ntotat, nn, maxrest, and mrperatom
+  if (allocated(nratom)) deallocate( nratom,iratom,ibmol,ibtype,xcart,coor,&
+                                     radius,radius_ini,gxcar,latomnext,&
+                                     fdist_atom, frest_atom,fmol,radiuswork,fixedatom,&
+                                     ityperest,restpars,xmol)
 
   allocate(nratom(ntotat),iratom(ntotat,mrperatom),ibmol(ntotat),&
            ibtype(ntotat),xcart(ntotat,3),coor(ntotat,3),&
@@ -292,6 +302,12 @@ subroutine setsizes( unit, stat )
   allocate(xmol(nn))
 
   ! Allocate other arrays used for input and output data
+
+  if (allocated(nconnect)) deallocate(nconnect,maxcon,amass,charge,ele,&
+                                      irestline,linestrut,resnumbers,&
+                                      input_itype,changechains,chain,&
+                                      fixedoninput,pdbfile,name,&
+                                      indflash,lflash,l,u,wd,wi,g)
 
   allocate(nconnect(ntotat,9),maxcon(ntotat),&
            amass(ntotat),charge(ntotat),ele(ntotat))
@@ -308,5 +324,6 @@ subroutine setsizes( unit, stat )
 
   allocate(l(nn),u(nn),wd(8*nn),wi(nn),g(nn))
 
+  stat = 0
 end subroutine setsizes
 

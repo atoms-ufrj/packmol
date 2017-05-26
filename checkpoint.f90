@@ -14,7 +14,7 @@
 ! a solution was not found
 !
 
-subroutine checkpoint(n,x)
+subroutine checkpoint(n,x,stat)
 
   use sizes
   use compute_data
@@ -23,6 +23,9 @@ subroutine checkpoint(n,x)
   use ahestetic
 
   implicit none
+
+  integer, intent(out) :: stat
+
   integer :: i, strlength
   integer :: n
   double precision :: x(n)
@@ -63,7 +66,7 @@ subroutine checkpoint(n,x)
             &)") fx
   write(*,dash3_line)
 
-  call output(n,x)
+  call output(n,x,stat)
 
   write(*,*) ' The solution with the best function value was '
   write(*,*) ' written to the output file: ', xyzout(1:strlength(xyzout))
@@ -85,7 +88,7 @@ subroutine checkpoint(n,x)
   write(*,*)
   write(*,dash1_line)
   xyzout = xyzout(1:strlength(xyzout))//'_FORCED'
-  call output(n,x)
+  call output(n,x,stat)
 
   write(*,*) ' The forced point was writen to the '
   write(*,*) ' output file: ', xyzout(1:strlength(xyzout)+7)
@@ -111,7 +114,8 @@ subroutine checkpoint(n,x)
   write(*,*) ' it is a reasonable starting configuration.'
   write(*,*) ' Check commentaries above for more details. '
   write(*,hash1_line) 
-      
+
+  stat = 1
   return
 end subroutine checkpoint
 

@@ -93,6 +93,10 @@ subroutine packmol( unit, stat )
 
   ! Allocate local array
 
+  if (allocated(fixed)) deallocate(fixed)
+  if (allocated(x)) deallocate(x)
+  if (allocated(xprint)) deallocate(xprint)
+  if (allocated(xfull)) deallocate(xfull)
   allocate(fixed(ntype),x(nn),xprint(nn),xfull(nn))
 
   ! Start time computation
@@ -522,7 +526,7 @@ subroutine packmol( unit, stat )
     write(*,dash1_line)
     write(*,*) ' Wrote output file: ', trim(adjustl(xyzout))
     write(*,dash1_line)
-    stat = 1
+    stat = 0
     return
   end if
   
@@ -549,7 +553,7 @@ subroutine packmol( unit, stat )
     call output(n,x,stat)
     if (stat /= 0) return
     write(*,*) ' Wrote initial point to output file: ', xyzout(1:strlength(xyzout)) 
-    stat = 1
+    stat = 0
     return
   end if
 
@@ -608,7 +612,7 @@ subroutine packmol( unit, stat )
       call writesuccess(itype,fdist,frest,fx)
       if ( itype == ntype + 1 ) then
         write(*,*) '  Running time: ', etime(tarray) - time0,' seconds. ' 
-        stat = 1
+        stat = 0
         return
       end if
 
@@ -647,8 +651,7 @@ subroutine packmol( unit, stat )
 
         if(loop.eq.nloop.and.itype.eq.ntype+1) then
           write(*,*)' STOP: Maximum number of GENCAN loops achieved.'
-          call checkpoint(n,xprint)
-          stat = 2
+          call checkpoint(n,xprint,stat)
           return
         end if
 
