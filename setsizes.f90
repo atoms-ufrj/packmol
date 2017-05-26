@@ -11,7 +11,7 @@
 ! Subroutine that sets the sizes of all allocatable arrays
 !
 
-subroutine setsizes()
+subroutine setsizes( unit, stat )
 
   use sizes
   use compute_data
@@ -20,6 +20,10 @@ subroutine setsizes()
   use flashsort
  
   implicit none
+
+  integer, intent(in)  :: unit
+  integer, intent(out) :: stat
+
   integer :: i, ival, ilast, iline, itype
   integer :: ioerr
   integer :: strlength
@@ -43,7 +47,7 @@ subroutine setsizes()
   maxkeywords = 0
   ntype = 0
   do
-    read(5,"(a200)",iostat=ioerr) record
+    read(unit,"(a200)",iostat=ioerr) record
     if ( ioerr /= 0 ) exit
 
     ! Remove comments
@@ -81,7 +85,7 @@ subroutine setsizes()
       end if
     end do  
   end do
-  rewind(5)
+  rewind(unit)
 
   allocate(inputfile(nlines),keyword(nlines,maxkeywords))
 
@@ -89,7 +93,7 @@ subroutine setsizes()
 
   iline = 0
   do
-    read(5,"(a200)",iostat=ioerr) record
+    read(unit,"(a200)",iostat=ioerr) record
     if ( ioerr /= 0 ) exit
 
     ! Remove comments
@@ -134,7 +138,8 @@ subroutine setsizes()
       read(record,*,iostat=ioerr) fbins
       if ( ioerr /= 0 ) then
         write(*,*) ' ERROR: Invalid value for fbins. '
-        stop
+        stat = 2
+        return
       end if
     end if
   end do
@@ -153,7 +158,8 @@ subroutine setsizes()
       if ( keyword(iline,2) == "none" ) then
         write(*,*) ' ERROR: structure without filename. '
         write(*,*) ' The syntax must be, for example: structure water.pdb '
-        stop 
+        stat = 2
+        return
       end if
     end if
   end do
@@ -218,7 +224,8 @@ subroutine setsizes()
       read(keyword(iline,2),*,iostat=ioerr) nmols(itype)
       if ( ioerr /= 0 ) then
         write(*,*) ' ERROR: Error reading number of molecules of type ', itype
-        stop  
+        stat = 2
+        return
       end if
     end if
 

@@ -36,7 +36,8 @@
 !
 !
 
-program packmol
+subroutine packmol( unit, stat )
+! Returned stat values: 0 - Success; 1 - Warning; 2 - Error
 
   use sizes
   use compute_data
@@ -46,6 +47,9 @@ program packmol
   use swaptypemod
   use ahestetic
   implicit none
+
+  integer, intent(in)  :: unit
+  integer, intent(out) :: stat
 
   integer :: itype, irest, idatom, iatom
   integer :: idtemp, nmtemp, natemp, input_itypetemp
@@ -84,7 +88,8 @@ program packmol
       
   ! Set dimensions of all arrays
 
-  call setsizes()
+  call setsizes( unit, stat )
+  if (stat /= 0) return
 
   ! Allocate local array
 
@@ -96,7 +101,8 @@ program packmol
 
   ! Reading input file
 
-  call getinp()
+  call getinp( stat )
+  if (stat /= 0) return
 
   ! Put molecules in their center of mass
 
@@ -136,7 +142,8 @@ program packmol
           read(keyword(iline,2),*,iostat=ioerr) rad
           if ( ioerr /= 0 ) then
             write(*,*) ' ERROR: Could not read radius from keyword. '
-            stop
+            stat = 2
+            return
           end if
           iicart = icart
           do imol = 1, nmols(itype)
@@ -176,7 +183,8 @@ program packmol
           read(keyword(iline,2),*,iostat=ioerr) rad
           if ( ioerr /= 0 ) then
             write(*,*) ' ERROR: Could not read radius from keyword. '
-            stop
+            stat = 2
+            return
           end if
           ival = 2
           do
@@ -185,7 +193,8 @@ program packmol
             if ( iat > natoms(itype) ) then
               write(*,*) ' ERROR: atom selection with index greater than number of '
               write(*,*) '        atoms in structure ', itype
-              stop
+              stat = 2
+              return
             end if
             radius(icart+iat) = rad
             ival = ival + 1
@@ -248,13 +257,15 @@ program packmol
           if(nmols(itype).gt.1) then
             write(*,*)' ERROR: Cannot set number > 1',' for fixed molecules. '
             write(*,*) '       Structure: ', itype,': ', trim(adjustl(record))
-            stop
+            stat = 2
+            return
           end if
           if ( restart_from(itype) /= 'none' .or. &
                restart_to(itype) /= 'none' ) then
             write(*,*) ' ERROR: Restart files cannot be used for fixed molecules. '
             write(*,*) '        Structure: ', itype,': ', trim(adjustl(record))
-            stop
+            stat = 2
+            return
           end if
         end if
       end do
@@ -394,7 +405,8 @@ program packmol
               if ( iiatom > natoms(itype) ) then
                 write(*,*) ' ERROR: atom selection with index greater than number of '
                 write(*,*) '        atoms in structure ', itype
-                stop
+                stat = 2
+                return
               end if
               if(iatom.eq.iiatom) exit
             end do
@@ -433,7 +445,8 @@ program packmol
       if(.not.rests) then
         write(*,*) ' ERROR: Some molecule has no geometrical',&
                    ' restriction defined: nothing to do.'
-        stop
+        stat = 2
+        return
       end if
     end do
   end do
@@ -490,7 +503,8 @@ program packmol
                keyword(iline,2) /= 'y' .and. &
                keyword(iline,2) /= 'z' ) then
             write(*,*) ' ERROR: constrain_rotation option not properly defined (not x, y, or z) '
-            stop
+            stat = 2
+            return
           end if
         end if
       end if
@@ -500,21 +514,24 @@ program packmol
   ! If there are no variables (only fixed molecules, stop)
 
   if(n.eq.0) then
-    call output(n,x)
+    call output(n,x,stat)
+    if (stat /= 0) return
     write(*,dash1_line)
     write(*,*) ' There are only fixed molecules, therefore there is nothing to do. '
     write(*,*) ' The output file contains the fixed molecules in the desired positions. '
     write(*,dash1_line)
     write(*,*) ' Wrote output file: ', trim(adjustl(xyzout))
     write(*,dash1_line)
-    stop
+    stat = 1
+    return
   end if
   
   !
   ! (Re)setting parameters and building initial point
   !
 
-  call initial(n,x)
+  call initial(n,x,stat)
+  if (stat /= 0) return
 
   ! Computing the energy at the initial point
 
@@ -529,9 +546,11 @@ program packmol
   ! Stop if only checking the initial approximation
 
   if(check) then
-    call output(n,x)
+    call output(n,x,stat)
+    if (stat /= 0) return
     write(*,*) ' Wrote initial point to output file: ', xyzout(1:strlength(xyzout)) 
-    stop
+    stat = 1
+    return
   end if
 
   !
@@ -579,7 +598,8 @@ program packmol
       write(*,*) ' Initial approximation is a solution. Nothing to do. '
       write(*,*)
       call swaptype(n,x,itype,3) ! Restore all-molecule vectors
-      call output(n,x)
+      call output(n,x,stat)
+      if (stat /= 0) return
       if( itype == ntype + 1 ) then
         write(*,*) ' Solution written to file: ', trim(adjustl(xyzout))
       else
@@ -588,7 +608,8 @@ program packmol
       call writesuccess(itype,fdist,frest,fx)
       if ( itype == ntype + 1 ) then
         write(*,*) '  Running time: ', etime(tarray) - time0,' seconds. ' 
-        stop 
+        stat = 1
+        return
       end if
 
     ! Otherwise, pack the molecules
@@ -627,7 +648,8 @@ program packmol
         if(loop.eq.nloop.and.itype.eq.ntype+1) then
           write(*,*)' STOP: Maximum number of GENCAN loops achieved.'
           call checkpoint(n,xprint)
-          stop
+          stat = 2
+          return
         end if
 
         write(*,dash3_line)
@@ -685,7 +707,8 @@ program packmol
           ! If the solution was found for this type
           if( fdist < precision .and. frest < precision ) then
             call swaptype(n,x,itype,3) ! Restore all molecule vectors
-            call output(n,x)
+            call output(n,x,stat)
+            if (stat /= 0) return
             write(*,*) ' Current structure written to file: ', trim(adjustl(xyzout))
             call writesuccess(itype,fdist,frest,fx)
             exit gencanloop
@@ -703,12 +726,14 @@ program packmol
           if ( fx < bestf ) bestf = fx
           ! If solution was found for all system
           if ( fdist < precision .and. frest < precision ) then
-            call output(n,x)
+            call output(n,x,stat)
+            if (stat /= 0) return
             write(*,*) ' Solution written to file: ', xyzout(1:strlength(xyzout))
             call writesuccess(itype,fdist,frest,fx)
             write(*,*) '  Running time: ', etime(tarray) - time0,' seconds. ' 
             write(*,*)
-            stop 
+            stat = 0
+            return 
           end if
 
         end if
@@ -716,7 +741,8 @@ program packmol
 
         ! If this is the best structure so far
         if( mod(loop+1,writeout) == 0 .and. all_type_fx < fprint ) then
-          call output(n,x)
+          call output(n,x,stat)
+          if (stat /= 0) return
           write(*,*) ' Current solution written to file: ', trim(adjustl(xyzout))
           fprint = all_type_fx
           do i = 1, n
@@ -725,7 +751,8 @@ program packmol
 
         ! If the user required printing even bad structures
         else if ( mod(loop+1,writeout) == 0 .and. writebad ) then
-          call output(n,x)
+          call output(n,x,stat)
+          if (stat /= 0) return
           write(*,*) ' Writing current (perhaps bad) structure to file: ', trim(adjustl(xyzout))
         end if
 
@@ -758,5 +785,5 @@ program packmol
 
   end do main
 
-end program packmol
-
+  stat = 0
+end subroutine packmol

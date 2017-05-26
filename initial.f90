@@ -13,7 +13,7 @@
 !                     builds the initial point
 !
 
-subroutine initial(n,x)
+subroutine initial(n,x,stat)
 
   use sizes
   use compute_data
@@ -22,6 +22,9 @@ subroutine initial(n,x)
   use usegencan
   use ahestetic
   implicit none
+
+  integer, intent(out) :: stat
+
   integer :: n, i, j, k, idatom, iatom, ilubar, ilugan, icart, itype, &
              imol, ntry, nb, iboxx, iboxy, iboxz, ifatom, &
              idfatom, iftype, jatom, ioerr
@@ -242,7 +245,8 @@ subroutine initial(n,x)
       end if
         write(*,*) ' >The maximum number of cycles (',nloop,') was achieved.' 
         write(*,*) '  You may try increasing it with the',' nloop keyword, as in: nloop 1000 '
-      stop
+      stat = 2
+      return
     end if
   end do
   init1 = .false.
@@ -368,7 +372,8 @@ subroutine initial(n,x)
                               x(ilugan+1), x(ilugan+2), x(ilugan+3)
       if ( ioerr /= 0 ) then
         write(*,*) ' ERROR: Could not read restart file: ', trim(adjustl(record))
-        stop
+        stat = 2
+        return
       end if
       ilubar = ilubar + 3
       ilugan = ilugan + 3
@@ -520,14 +525,16 @@ subroutine initial(n,x)
       open(10,file=record,status='old',action='read',iostat=ioerr)
       if ( ioerr /= 0 ) then
         write(*,*) ' ERROR: Could not open restart file: ', trim(adjustl(record))
-        stop
+        stat = 2
+        return
       end if
       do i = 1, nmols(itype)
         read(10,*,iostat=ioerr) x(ilubar+1), x(ilubar+2), x(ilubar+3), &
                                 x(ilugan+1), x(ilugan+2), x(ilugan+3)
         if ( ioerr /= 0 ) then
           write(*,*) ' ERROR: Could not read restart file: ', trim(adjustl(record))
-          stop
+          stat = 2
+          return
         end if
         ilubar = ilubar + 3
         ilugan = ilugan + 3
@@ -547,7 +554,10 @@ subroutine initial(n,x)
 
   ! Return with current random point (not default)
 
-  if(randini) return
+  if(randini) then
+    stat = 0
+    return
+  end if
  
   ! Adjusting current point to fit the constraints
 
@@ -590,6 +600,7 @@ subroutine initial(n,x)
 
   deallocate(hasfixed)
 
+  stat = 0
   return
 end subroutine initial
 

@@ -11,6 +11,10 @@
 #
 #          make 
 #
+# If you want to compile the serial static library version, type
+#
+#          make lib
+#
 # If you want to compile with some specific fortran compiler, you must 
 # change the line below to the path of your fortran compiler. 
 #
@@ -40,7 +44,7 @@ endif
 #
 # Files required
 #
-oall = cenmass.o \
+olib = cenmass.o \
        gencan.o \
        pgencan.o \
        initial.o \
@@ -77,6 +81,7 @@ oall = cenmass.o \
        computef.o \
        computeg.o \
        input.o
+oall = $(olib) main.o
 #
 # Linking 
 #
@@ -89,6 +94,18 @@ all : $(oall)
 	@\rm -f *.mod *.o
 	@echo " ------------------------------------------------------ " 
 	@echo " Packmol succesfully built." 
+	@echo " ------------------------------------------------------ " 
+#
+# Linking the static library version
+#
+lib : $(olib)
+	@echo " ------------------------------------------------------ " 
+	@echo " Compiling packmol with $(FORTRAN) " 
+	@echo " Flags: $(FLAGS) " 
+	@echo " ------------------------------------------------------ " 
+	@ar cr libpackmol.a $(olib)
+	@echo " ------------------------------------------------------ " 
+	@echo " Packmol succesfully built. Static library available.   " 
 	@echo " ------------------------------------------------------ " 
 #
 # Compiling with flags for development
@@ -124,6 +141,8 @@ ahestetic.o : ahestetic.f90
 #
 # Code compiled only for all versions
 #
+main.o : main.f90 packmol.o $(modules)
+	@$(FORTRAN) $(FLAGS) -c main.f90
 cenmass.o : cenmass.f90 $(modules)
 	@$(FORTRAN) $(FLAGS) -c cenmass.f90
 initial.o : initial.f90 $(modules)

@@ -12,7 +12,7 @@
 ! Subroutine getinp: subroutine that reads the input file
 !
 
-subroutine getinp()
+subroutine getinp( stat )
 
   use sizes
   use compute_data, only : ntype, natoms, idfirst, nmols, ityperest, coor, restpars
@@ -20,6 +20,9 @@ subroutine getinp()
   use usegencan
 
   implicit none
+
+  integer, intent(out) :: stat
+
   integer :: i, k, ii, iarg, iline, idatom, iatom, in, lixo, irest, itype, itest,&
              imark, strlength, ioerr
   double precision :: clen
@@ -165,12 +168,14 @@ subroutine getinp()
              keyword(i,1) /= 'iprint2' .and. &
              keyword(i,1) /= 'chkgrad' ) then
       write(*,*) ' ERROR: Keyword not recognized: ', trim(keyword(i,1))
-      stop
+      stat = 2
+      return
     end if
   end do
   if ( ioerr /= 0 ) then
     write(*,*) ' ERROR: Some optional keyword was not used correctly: ', trim(keyword(i,1))
-    stop
+    stat = 2
+    return
   end if
   write(*,*) ' Seed for random number generator: ', seed
   call init_random_number(seed)
@@ -186,7 +191,8 @@ subroutine getinp()
   end do
   if(xyzout(1:4) == '####') then
     write(*,*)' ERROR: Output file not (correctly?) specified. '
-    stop
+    stat = 2
+    return
   end if
   write(*,*)' Output file: ', xyzout(1:strlength(xyzout))
 
@@ -211,7 +217,11 @@ subroutine getinp()
           idfirst(itype) = idfirst(itype) + natoms(ii)
         end do
         open(10,file=keyword(iline,2),status='old',iostat=ioerr)
-        if ( ioerr /= 0 ) call failopen(keyword(iline,2))
+        if ( ioerr /= 0 ) then
+          call failopen(keyword(iline,2))
+          stat = 2
+          return
+        end if
         record(1:6) = '######'
         do while(record(1:4).ne.'ATOM'.and.record(1:6).ne.'HETATM')
           read(10,"( a200 )") record
@@ -232,7 +242,8 @@ subroutine getinp()
               write(*,*) ' Standard PDB format specifications', &
                          ' can be found at: '
               write(*,*) ' www.rcsb.org/pdb '
-              stop
+              stat = 2
+              return
             end if
 
             ! This only tests if residue numbers can be read, they are used 
@@ -250,7 +261,8 @@ subroutine getinp()
               write(*,*) ' Standard PDB format specifications',&
                          ' can be found at: '
               write(*,*) ' www.rcsb.org/pdb '
-              stop
+              stat = 2
+              return
             end if   
           end if
           read(10,"( a200 )",iostat=ioerr) record
@@ -263,7 +275,11 @@ subroutine getinp()
 
       if(tinker) then
         open(10,file=keyword(iline,2),status='old',iostat=ioerr)
-        if ( ioerr /= 0 ) call failopen(keyword(iline,2))
+        if ( ioerr /= 0 ) then
+          call failopen(keyword(iline,2))
+          stat = 2
+          return
+        end if
         idfirst(itype) = 1
         do ii = itype - 1, 1, -1
           idfirst(itype) = idfirst(itype) + natoms(ii)
@@ -350,7 +366,11 @@ subroutine getinp()
 
       if(xyz) then
         open(10,file=keyword(iline,2),status='old',iostat=ioerr)
-        if ( ioerr /= 0 ) call failopen(keyword(iline,2))
+        if ( ioerr /= 0 ) then
+          call failopen(keyword(iline,2))
+          stat = 2
+          return
+        end if
         read(10,*) natoms(itype)
         read(10,"( a200 )") name(itype)
         if(name(itype).lt.' ') name(itype) = 'Without_title'
@@ -373,7 +393,11 @@ subroutine getinp()
   
       if(moldy) then
         open(10,file=keyword(iline,2), status ='old',iostat=ioerr)
-        if ( ioerr /= 0 ) call failopen(keyword(iline,2))
+        if ( ioerr /= 0 ) then
+          call failopen(keyword(iline,2))
+          stat = 2
+          return
+        end if
         read(10,*) name(itype), nmols(itype)
         natoms(itype) = 0
         do while(.true.)
@@ -575,7 +599,8 @@ subroutine getinp()
 
     if ( ioerr /= 0 ) then
       write(*,*) ' ERROR: Some restriction is not set correctly. '
-      stop
+      stat = 2
+      return
     end if
 
   end do
@@ -591,14 +616,16 @@ subroutine getinp()
       read(keyword(iline,2),*,iostat=ioerr) dism
       if ( ioerr /= 0 ) then
         write(*,*) ' ERROR: Failed reading tolerance. '
-        stop
+        stat = 2
+        return
       end if
       exit
     end if
   end do
   if ( ioerr /= 0 ) then
     write(*,*) ' ERROR: Overall tolerance not set. Use, for example: tolerance 2.0 '
-    stop
+    stat = 2
+    return
   end if
   write(*,*) ' Distance tolerance: ', dism
 
@@ -618,7 +645,8 @@ subroutine getinp()
            iline == nlines) then
           write(*,*) ' Input file ERROR: structure specification',&
                      ' not ending with "end structure"'
-          stop
+          stat = 2
+          return
         end if
         iline = iline + 1
       end do
@@ -665,7 +693,8 @@ subroutine getinp()
       if ( chain(itype) /= "#" .and. changechains(itype) ) then
         write(*,*) " ERROR: 'changechains' and 'chain' input parameters are not compatible "
         write(*,*) "        for a single structure. "
-        stop
+        stat = 2
+        return
       end if
     end do
   end if
@@ -704,7 +733,8 @@ subroutine getinp()
         restart_from(0) = keyword(iline,2)
       else
         write(*,*) ' ERROR: More than one definition of restart_from file for all system. '
-        stop
+        stat = 2
+        return
       end if
     end if
     if ( keyword(iline,1) == 'restart_to' ) then
@@ -719,11 +749,13 @@ subroutine getinp()
         restart_to(0) = keyword(iline,2)
       else
         write(*,*) ' ERROR: More than one definition of restart_to file for all system. '
-        stop
+        stat = 2
+        return
       end if
     end if
   end do lines
- 
+
+  stat = 0
   return
 end subroutine getinp
 
@@ -740,7 +772,6 @@ subroutine failopen(record)
   write(*,*) '        files are in the current directory or if the' 
   write(*,*) '        correct paths are provided.'
   write(*,*) 
-  stop 
 end subroutine failopen
 
 !
