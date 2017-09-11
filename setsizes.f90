@@ -3,11 +3,6 @@
 !  Copyright (c) 2009-2011, Leandro Martínez, Jose Mario Martinez,
 !  Ernesto G. Birgin.
 !  
-!  This program is free software; you can redistribute it and/or
-!  modify it under the terms of the GNU General Public License
-!  as published by the Free Software Foundation; either version 2
-!  of the License, or (at your option) any later version.
-!  
 ! Subroutine that sets the sizes of all allocatable arrays
 !
 
@@ -27,7 +22,7 @@ subroutine setsizes( unit, stat )
   integer :: i, ival, ilast, iline, itype
   integer :: ioerr
   integer :: strlength
-  character(len=200) :: record, word, blank
+  character(len=200) :: record, word, blank, alltospace
 
   ! Instructions on how to run packmol
 
@@ -48,6 +43,10 @@ subroutine setsizes( unit, stat )
   ntype = 0
   do
     read(unit,"(a200)",iostat=ioerr) record
+    ! Replace any strange blank character by spaces
+
+    record = alltospace(record)
+
     if ( ioerr /= 0 ) exit
 
     ! Remove comments
@@ -97,6 +96,10 @@ subroutine setsizes( unit, stat )
   do
     read(unit,"(a200)",iostat=ioerr) record
     if ( ioerr /= 0 ) exit
+
+    ! Convert all strange blank characters to spaces
+
+    record = alltospace(record)
 
     ! Remove comments
 
@@ -232,6 +235,10 @@ subroutine setsizes( unit, stat )
         write(*,*) ' ERROR: Error reading number of molecules of type ', itype
         stat = 2
         return
+      end if
+      if ( nmols(itype) < 1 ) then
+        write(*,*) ' ERROR: Number of molecules of type ', itype, ' set to less than 1 '
+        stop
       end if
     end if
 

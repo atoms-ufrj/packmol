@@ -3,11 +3,6 @@
 !  Copyright (c) 2009-2011, Leandro Martínez, Jose Mario Martinez,
 !  Ernesto G. Birgin.
 !  
-!  This program is free software; you can redistribute it and/or
-!  modify it under the terms of the GNU General Public License
-!  as published by the Free Software Foundation; either version 2
-!  of the License, or (at your option) any later version.
-!  
 !-----------------------------------------------------------------------------
 !
 ! http://www.ime.unicamp.br/~martinez/packmol
@@ -405,7 +400,14 @@ subroutine packmol( unit, stat )
             iiatom = -1
             do iat = 2, maxkeywords
               read(keyword(iline,iat),*,iostat=ioerr) iiatom
-              if ( ioerr /= 0 ) exit
+              if ( ioerr /= 0 ) then
+                if ( iiatom == -1 ) then 
+                  write(*,*) ' ERROR: Could not read atom selection for type: ', itype
+                  stop
+                else
+                  exit
+                end if
+              end if
               if ( iiatom > natoms(itype) ) then
                 write(*,*) ' ERROR: atom selection with index greater than number of '
                 write(*,*) '        atoms in structure ', itype
