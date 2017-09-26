@@ -40,7 +40,7 @@ subroutine output(n,x,stat)
 
   ! Job title
 
-  title = ' Built with Packmol '
+  title = '# Built with Packmol '
 
   !
   ! Write restart files, if required
